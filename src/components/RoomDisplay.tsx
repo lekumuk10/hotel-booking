@@ -1,8 +1,12 @@
+
 import {
   useMemo,
   useState,
   type ReactNode,
-} from 'react';
+} from "react";
+
+//import axios from "axios";
+
 import {
   Calendar,
   Users,
@@ -25,8 +29,10 @@ import {
   Loader2,
   KeyRound,
 } from 'lucide-react';
-import { roomRates, hotel } from '../data/hotel';
-import { createBooking, type BookingRecord } from '../lib/database';
+import { hotel } from "../data/hotel";
+import { createBooking as saveLocalBooking, type BookingRecord } from "../lib/database";
+import { createBooking as saveBookingAPI } from "../services/bookingService";
+import { useRooms } from "../hooks/useRooms";
 
 function todayISO(offsetDays = 0): string {
   const d = new Date();
@@ -63,6 +69,7 @@ function formatDateLong(dateStr: string): string {
 type Step = 'search' | 'guest' | 'payment' | 'confirmation';
 
 interface RoomRate {
+  id: number;
   name: string;
   pricePerNight: number;
   image: string;
@@ -117,20 +124,43 @@ export default function RoomDisplay({ onBack }: { onBack: () => void }) {
   const [confirmation, setConfirmation] = useState<BookingRecord | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const { rooms, loading, error } = useRooms();
+
   const nights = useMemo(
     () => nightsBetween(checkIn, checkOut),
     [checkIn, checkOut],
   );
+const sortedRooms = useMemo(() => {
+  const copy = rooms.map((room) => ({
+    id: room.id,
+    name: room.name,
+    description: room.description,
+    pricePerNight: Number(room.base_price),
+    image: "/images/default-room.jpg",
+    size: `${room.room_size} m²`,
+    bed: room.bed_type,
+    view: "City View",
+    maxGuests: room.max_adults + room.max_children,
+    ratePlan: "Flexible Rate",
+    cancellation: "Free cancellation",
+    breakfast: true,
+    features: [
+      "Free Wi-Fi",
+      "Air Conditioning",
+      "Smart TV",
+      "Mini Bar",
+    ],
+  }));
 
-  const sortedRooms = useMemo(() => {
-    const copy = [...roomRates];
-    copy.sort((a, b) =>
-      sort === 'lowest'
-        ? a.pricePerNight - b.pricePerNight
-        : b.pricePerNight - a.pricePerNight,
-    );
-    return copy;
-  }, [sort]);
+  copy.sort((a, b) =>
+    sort === "lowest"
+      ? a.pricePerNight - b.pricePerNight
+      : b.pricePerNight - a.pricePerNight
+  );
+  
+
+  return copy;
+}, [rooms, sort]);
 
   const total = selectedRoom
     ? selectedRoom.pricePerNight * nights * roomCount
@@ -202,7 +232,35 @@ export default function RoomDisplay({ onBack }: { onBack: () => void }) {
     };
 
     try {
-      await createBooking(record);
+      await saveBookingAPI({
+  booking_reference: record.id,
+  room_id: selectedRoom.id,
+  room_name: selectedRoom.name,
+
+  guest_first_name: guest.firstName,
+  guest_last_name: guest.lastName,
+  guest_email: guest.email,
+  guest_phone: guest.phone,
+
+  check_in: checkIn,
+  check_out: checkOut,
+  nights,
+
+  adults,
+  children,
+  rooms: roomCount,
+
+  price_per_night: selectedRoom.pricePerNight,
+  subtotal: total,
+  tax,
+  total: grandTotal,
+
+  payment_method: "Card",
+  payment_status: "Paid",
+  booking_status: "Confirmed",
+});
+
+await saveLocalBooking(record);
       setConfirmation(record);
       setStep('confirmation');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -222,7 +280,21 @@ export default function RoomDisplay({ onBack }: { onBack: () => void }) {
     setErrors({});
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+if (loading) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      Loading available rooms...
+    </div>
+  );
+}
 
+if (error) {
+  return (
+    <div className="min-h-screen flex items-center justify-center text-red-600">
+      {error}
+    </div>
+  );
+}
   return (
     <section id="room-display" className="min-h-screen bg-blu-50 pt-28 lg:pt-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
