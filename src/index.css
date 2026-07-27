@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply font-sans text-blu-950 antialiased;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .booking-input {
+    @apply rounded-lg border border-white/20 bg-white/10 px-3 py-2.5 text-sm text-white focus:border-gold-400 focus:outline-none;
+  }
+  .booking-input option {
+    @apply text-blu-950;
+  }
+  .room-search-input {
+    @apply rounded-lg border border-blu-200 bg-white px-3 py-2.5 text-sm text-blu-950 focus:border-gold-400 focus:outline-none;
+  }
+  .room-search-input option {
+    @apply text-blu-950;
+  }
+}
