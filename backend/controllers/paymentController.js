@@ -106,13 +106,14 @@ exports.initializePayment = async (req, res) => {
         "Pending",
       ]
     );
-
+const exchangeRate = Number(process.env.USD_TO_KES || 130);
+const totalKES = total * exchangeRate;
     // Initialize Paystack
     const response = await axios.post(
       "https://api.paystack.co/transaction/initialize",
       {
         email: guest_email,
-        amount: Math.round(total * 100),
+        amount: Math.round(totalKES * 100),
         reference: booking_reference,
         callback_url: `${process.env.FRONTEND_URL}/payment/success`,
       },

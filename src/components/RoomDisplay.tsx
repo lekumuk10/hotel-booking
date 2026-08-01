@@ -576,11 +576,11 @@ if (error) {
           <div className="grid gap-8 py-10 lg:grid-cols-[1fr_380px]">
             <div className="animate-fade-up">
               <h1 className="font-serif text-2xl font-bold text-blu-950 sm:text-3xl">
-                Payment Details
+                Secure Payment 
               </h1>
               <p className="mt-1 flex items-center gap-1.5 text-sm text-blu-600">
                 <Lock className="h-3.5 w-3.5" />
-                This is a demo — no real payment will be processed.
+                Complete your Booking .
               </p>
 
               <div className="mt-6 rounded-2xl bg-white p-6 shadow-md">
