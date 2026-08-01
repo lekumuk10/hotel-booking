@@ -214,11 +214,8 @@ const sortedRooms = useMemo(() => {
     try {
 
         const response = await axios.post(
-
             "https://hotel-booking-hvwt.onrender.com/api/payments/initialize",
-
             {
-
                 room_id: selectedRoom.id,
                 room_name: selectedRoom.name,
 
@@ -241,38 +238,54 @@ const sortedRooms = useMemo(() => {
                 subtotal: total,
                 tax,
                 total: grandTotal
-
             }
-
         );
 
-       if (response.data.success) {
+        if (response.data.success) {
 
-    paystack.resumeTransaction({
-    accessCode: response.data.access_code,
+            paystack.resumeTransaction(
+                response.data.access_code,
+                {
+                    onSuccess: async (transaction: any) => {
 
-    onSuccess: async (transaction: any) => {
-        try {
-            await axios.get(
-                `${import.meta.env.VITE_API_URL}/payments/verify/${transaction.reference}`
+                        try {
+
+                            await axios.get(
+                                `${import.meta.env.VITE_API_URL}/payments/verify/${transaction.reference}`
+                            );
+
+                            alert("Payment Successful!");
+
+                            window.location.reload();
+
+                        } catch (err) {
+
+                            console.error(err);
+
+                            alert("Payment verification failed.");
+
+                        }
+
+                    },
+
+                    onCancel: () => {
+
+                        alert("Payment Cancelled.");
+
+                    },
+
+                    onError: (error: any) => {
+
+                        console.error(error);
+
+                        alert(error.message);
+
+                    }
+                }
             );
 
-            alert("Payment Successful!");
-            window.location.reload();
-        } catch (err) {
-            console.error(err);
-            alert("Payment verification failed.");
+            return;
         }
-    },
-
-    onCancel: () => {
-        alert("Payment Cancelled.");
-    }
-});
-
-    return;
-
-}
 
         alert("Unable to initialize payment.");
 
@@ -281,11 +294,9 @@ const sortedRooms = useMemo(() => {
         console.error(err);
 
         alert(
-
             err.response?.data?.message ||
-
+            err.message ||
             "Unable to connect to Paystack."
-
         );
 
     } finally {
@@ -293,7 +304,6 @@ const sortedRooms = useMemo(() => {
         setSubmitting(false);
 
     }
-
 }
 
   function startOver() {
