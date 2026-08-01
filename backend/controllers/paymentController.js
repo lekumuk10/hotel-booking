@@ -116,6 +116,7 @@ const totalKES = total * exchangeRate;
         amount: Math.round(totalKES * 100),
         reference: booking_reference,
         callback_url: `${process.env.FRONTEND_URL}/payment/success`,
+        channels: ["card"],
       },
       {
         headers: {
