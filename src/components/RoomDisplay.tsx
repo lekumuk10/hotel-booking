@@ -205,7 +205,10 @@ const sortedRooms = useMemo(() => {
 
   async function handleConfirmPayment() {
 
-    if (!validatePayment() || !selectedRoom) return;
+    alert("Button clicked");
+    console.log("Button clicked");
+
+    if (!selectedRoom) return;
 
     setSubmitting(true);
 
