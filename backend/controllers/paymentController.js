@@ -1,120 +1,246 @@
 const axios = require("axios");
 const db = require("../config/database");
+const crypto = require("crypto");
 
-// ===============================
-// Initialize Paystack Payment
-// ===============================
+// ======================================
+// INITIALIZE PAYMENT
+// ======================================
 exports.initializePayment = async (req, res) => {
-    try {
-        const {
-            email,
-            amount,
-            booking_reference
-        } = req.body;
+  try {
+    const {
+      room_id,
+      room_name,
 
-        const response = await axios.post(
-            "https://api.paystack.co/transaction/initialize",
-            {
-                email,
-                amount: amount * 100, // Paystack expects amount in the smallest currency unit
-                reference: booking_reference,
-                callback_url: `${process.env.FRONTEND_URL}/payment/success`
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-                    "Content-Type": "application/json"
-                }
-            }
-        );
+      guest_first_name,
+      guest_last_name,
+      guest_email,
+      guest_phone,
 
-        res.json(response.data);
+      check_in,
+      check_out,
+      nights,
 
-    } catch (err) {
+      adults,
+      children,
+      rooms,
 
-        console.error(err.response?.data || err.message);
+      subtotal,
+      tax,
+      total,
+    } = req.body;
 
-        res.status(500).json({
-            success: false,
-            message: "Unable to initialize payment"
-        });
-
+    // Validate required fields
+    if (!guest_email || !room_id || !total) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required booking details.",
+      });
     }
+
+    // Generate booking reference
+    const booking_reference =
+      "BK-" +
+      Date.now() +
+      "-" +
+      crypto.randomBytes(3).toString("hex").toUpperCase();
+
+    // Save booking as Pending
+    await db.query(
+      `
+      INSERT INTO bookings (
+
+        booking_reference,
+        room_id,
+        room_name,
+
+        guest_first_name,
+        guest_last_name,
+        guest_email,
+        guest_phone,
+
+        check_in,
+        check_out,
+        nights,
+
+        adults,
+        children,
+        rooms,
+
+        subtotal,
+        tax,
+        total,
+
+        payment_method,
+        payment_status,
+        booking_status
+
+      )
+
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      `,
+      [
+        booking_reference,
+
+        room_id,
+        room_name,
+
+        guest_first_name,
+        guest_last_name,
+        guest_email,
+        guest_phone,
+
+        check_in,
+        check_out,
+        nights,
+
+        adults,
+        children,
+        rooms,
+
+        subtotal,
+        tax,
+        total,
+
+        "Card",
+        "Pending",
+        "Pending",
+      ]
+    );
+
+    // Initialize Paystack
+    const response = await axios.post(
+      "https://api.paystack.co/transaction/initialize",
+      {
+        email: guest_email,
+        amount: Math.round(total * 100),
+        reference: booking_reference,
+        callback_url: `${process.env.FRONTEND_URL}/payment/success`,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    // Save Paystack access code
+    await db.query(
+      `
+      UPDATE bookings
+      SET paystack_access_code=?
+      WHERE booking_reference=?
+      `,
+      [
+        response.data.data.access_code,
+        booking_reference,
+      ]
+    );
+
+    return res.json({
+      success: true,
+      authorization_url: response.data.data.authorization_url,
+      access_code: response.data.data.access_code,
+      reference: booking_reference,
+    });
+
+  } catch (err) {
+
+    console.error(
+      "Initialize Payment Error:",
+      err.response?.data || err.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to initialize payment.",
+    });
+
+  }
 };
 
-// ===============================
-// Verify Payment
-// ===============================
+// ======================================
+// VERIFY PAYMENT
+// ======================================
 exports.verifyPayment = async (req, res) => {
+  try {
 
-    try {
+    const { reference } = req.params;
 
-        const { reference } = req.params;
+    const response = await axios.get(
+      `https://api.paystack.co/transaction/verify/${reference}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        },
+      }
+    );
 
-        const response = await axios.get(
-            `https://api.paystack.co/transaction/verify/${reference}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
-                }
-            }
-        );
+    const payment = response.data.data;
 
-        const payment = response.data.data;
+    if (
+      payment.status === "success" &&
+      payment.gateway_response === "Successful"
+    ) {
 
-        if (payment.status === "success") {
+      await db.query(
+        `
+        UPDATE bookings
+        SET
 
-            await db.query(
-                `
-                UPDATE bookings
-                SET
-                    payment_status = 'Paid',
-                    booking_status = 'Confirmed',
-                    paystack_reference = ?,
-                    paid_at = NOW()
-                WHERE booking_reference = ?
-                `,
-                [
-                    reference,
-                    reference
-                ]
-            );
+          payment_status='Paid',
+          booking_status='Confirmed',
+          paystack_reference=?,
+          paid_at=NOW()
 
-        }
-
-        res.json(response.data);
-
-    } catch (err) {
-
-        console.error(err.response?.data || err.message);
-
-        res.status(500).json({
-            success: false,
-            message: "Verification failed"
-        });
+        WHERE booking_reference=?
+        `,
+        [
+          payment.reference,
+          payment.reference,
+        ]
+      );
 
     }
 
+    return res.json({
+      success: true,
+      payment,
+    });
+
+  } catch (err) {
+
+    console.error(
+      "Verification Error:",
+      err.response?.data || err.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Verification failed.",
+    });
+
+  }
 };
 
-// ===============================
-// Paystack Webhook
-// ===============================
+// ======================================
+// PAYSTACK WEBHOOK
+// ======================================
 exports.webhook = async (req, res) => {
 
-    try {
+  try {
 
-        console.log("========== PAYSTACK WEBHOOK ==========");
-        console.log(req.body);
+    console.log("========== PAYSTACK WEBHOOK ==========");
+    console.log(req.body);
 
-        res.sendStatus(200);
+    res.sendStatus(200);
 
-    } catch (err) {
+  } catch (err) {
 
-        console.error(err);
+    console.error(err);
 
-        res.sendStatus(500);
+    res.sendStatus(500);
 
-    }
+  }
 
 };
