@@ -1,3 +1,3 @@
-import { PaystackPop } from "@paystack/inline-js";
+import PaystackPop from "@paystack/inline-js";
 
 export const paystack = new PaystackPop();
