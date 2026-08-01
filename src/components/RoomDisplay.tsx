@@ -617,7 +617,7 @@ if (error) {
 >
     {submitting
         ? "Opening Paystack..."
-        : `Pay KES ${grandTotal.toLocaleString()}`}
+        : `Pay ${grandTotal.toLocaleString()}`}
 </button>  
 
    </div>
