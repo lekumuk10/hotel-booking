@@ -604,8 +604,6 @@ if (error) {
     </p>
 
     <ul className="mt-4 space-y-2 text-slate-700">
-        <li>• M-PESA</li>
-        <li>• Airtel Money</li>
         <li>• Visa</li>
         <li>• Mastercard</li>
         <li>• Bank Transfer</li>
