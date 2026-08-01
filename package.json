@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
+    "@paystack/inline-js": "^2.24.0",
     "@supabase/supabase-js": "^2.57.4",
     "axios": "^1.18.1",
     "lucide-react": "^0.344.0",
