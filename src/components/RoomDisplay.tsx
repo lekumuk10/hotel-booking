@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import axios from "axios";
+import { paystack } from "../hooks/usePaystack";
 
 import {
   Calendar,
@@ -245,14 +246,51 @@ const sortedRooms = useMemo(() => {
 
         );
 
-        if (response.data.success) {
+       if (response.data.success) {
 
-            window.location.href =
-                response.data.authorization_url;
+    paystack.newTransaction({
 
-            return;
+        key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
+
+        email: guest.email,
+
+        amount: Math.round(grandTotal * 100),
+
+        reference: response.data.reference,
+
+        onSuccess: async (transaction: any) => {
+
+            try {
+
+                await axios.get(
+                    `${import.meta.env.VITE_API_URL}/payments/verify/${transaction.reference}`
+                );
+
+                alert("Payment Successful!");
+
+                window.location.reload();
+
+            } catch (err) {
+
+                console.error(err);
+
+                alert("Payment verification failed.");
+
+            }
+
+        },
+
+        onCancel: () => {
+
+            alert("Payment Cancelled.");
 
         }
+
+    });
+
+    return;
+
+}
 
         alert("Unable to initialize payment.");
 
