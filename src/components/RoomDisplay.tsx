@@ -1005,7 +1005,12 @@ function BookingSummary({
       <div className="mt-4 flex items-baseline justify-between border-t border-blu-100 pt-4">
         <span className="font-serif text-lg font-bold text-blu-950">Total</span>
         <span className="font-serif text-2xl font-bold text-blu-950">
-          ${grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          <span className="font-serif text-2xl font-bold text-blue-950">
+    USD {grandTotal.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    })}
+</span>
         </span>
       </div>
 
