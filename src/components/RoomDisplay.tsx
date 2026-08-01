@@ -22,12 +22,10 @@ import {
   ArrowRight,
   ArrowLeft,
   Lock,
-  CreditCard,
   User,
   Mail,
   Phone,
   CheckCircle2,
-  Loader2,
   KeyRound,
 } from 'lucide-react';
 import { hotel } from "../data/hotel";
@@ -611,92 +609,48 @@ if (error) {
               </p>
 
               <div className="mt-6 rounded-2xl bg-white p-6 shadow-md">
-                {/* Accepted cards */}
-                <div className="mb-5 flex items-center gap-2 border-b border-blu-100 pb-4">
-                  <CreditCard className="h-5 w-5 text-blu-600" />
-                  <span className="text-sm font-medium text-blu-700">We accept</span>
-                  <div className="flex gap-2">
-                    {['Visa', 'Mastercard', 'Amex'].map((c) => (
-                      <span key={c} className="rounded border border-blu-200 bg-blu-50 px-2 py-0.5 text-xs font-semibold text-blu-600">
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+             <div className="flex items-center gap-3 mb-6">
+    <ShieldCheck className="w-10 h-10 text-green-600" />
 
-                <div className="grid gap-5">
-                  <InputField
-                    icon={<CreditCard className="h-4 w-4" />}
-                    label="Card number"
-                    value={payment.cardNumber}
-                    onChange={(v) => setPayment({ ...payment, cardNumber: formatCardNumber(v) })}
-                    error={errors.cardNumber}
-                    placeholder="1234 5678 9012 3456"
-                    maxLength={23}
-                  />
-                  <InputField
-                    icon={<User className="h-4 w-4" />}
-                    label="Name on card"
-                    value={payment.cardName}
-                    onChange={(v) => setPayment({ ...payment, cardName: v })}
-                    error={errors.cardName}
-                    placeholder="JOHN DOE"
-                  />
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <InputField
-                      label="Expiry date"
-                      value={payment.expiry}
-                      onChange={(v) => setPayment({ ...payment, expiry: formatExpiry(v) })}
-                      error={errors.expiry}
-                      placeholder="MM/YY"
-                      maxLength={5}
-                    />
-                    <InputField
-                      icon={<Lock className="h-4 w-4" />}
-                      label="CVC"
-                      value={payment.cvc}
-                      onChange={(v) => setPayment({ ...payment, cvc: v.replace(/\D/g, '').slice(0, 4) })}
-                      error={errors.cvc}
-                      placeholder="123"
-                      maxLength={4}
-                    />
-                  </div>
-                </div>
+    <div>
+        <h2 className="text-2xl font-bold text-slate-800">
+            Secure Payment
+        </h2>
 
-                {errors.submit && (
-                  <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-                    {errors.submit}
-                  </p>
-                )}
+        <p className="text-slate-500">
+            Your payment will be securely processed by Paystack.
+        </p>
+    </div>
+</div>
 
-                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-                  <button
-                    onClick={() => setStep('guest')}
-                    className="flex items-center justify-center gap-2 rounded-full border border-blu-200 px-6 py-3 text-sm font-semibold text-blu-700 transition-colors hover:bg-blu-100"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back to guest details
-                  </button>
-                  <button
-                    onClick={handleConfirmPayment}
-                    disabled={submitting}
-                    className="flex items-center justify-center gap-2 rounded-full bg-gold-400 px-6 py-3 text-sm font-semibold text-blu-950 transition-all hover:bg-gold-300 hover:shadow-lg hover:shadow-gold-400/30 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Processing payment…
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="h-4 w-4" />
-                        Pay ${grandTotal.toLocaleString()} & Confirm
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
+<div className="rounded-xl bg-blue-50 border border-blue-100 p-5 mb-6">
+    <p className="text-slate-700">
+        Click the button below to open the secure Paystack payment window.
+    </p>
+
+    <ul className="mt-4 space-y-2 text-slate-700">
+        <li>• M-PESA</li>
+        <li>• Airtel Money</li>
+        <li>• Visa</li>
+        <li>• Mastercard</li>
+        <li>• Bank Transfer</li>
+    </ul>
+</div>
+
+<button
+    onClick={handleConfirmPayment}
+    disabled={submitting}
+    className="w-full rounded-xl bg-amber-500 hover:bg-amber-600 text-white py-4 font-semibold disabled:opacity-60"
+>
+    {submitting
+        ? "Opening Paystack..."
+        : `Pay KES ${grandTotal.toLocaleString()}`}
+</button>  
+
+   </div>
+
+  </div>
+
 
             <BookingSummary
               room={selectedRoom}
@@ -773,16 +727,9 @@ if (error) {
   );
 }
 
-function formatCardNumber(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 19);
-  return digits.replace(/(.{4})/g, '$1 ').trim();
-}
 
-function formatExpiry(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 4);
-  if (digits.length <= 2) return digits;
-  return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-}
+
+
 
 /* ---- Stepper ---- */
 function Stepper({ step }: { step: Step }) {
