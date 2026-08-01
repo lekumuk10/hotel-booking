@@ -5,7 +5,7 @@ import {
   type ReactNode,
 } from "react";
 
-//import axios from "axios";
+import axios from "axios";
 
 import {
   Calendar,
@@ -30,8 +30,6 @@ import {
   KeyRound,
 } from 'lucide-react';
 import { hotel } from "../data/hotel";
-import { createBooking as saveLocalBooking, type BookingRecord } from "../lib/database";
-import { createBooking as saveBookingAPI } from "../services/bookingService";
 import { useRooms } from "../hooks/useRooms";
 
 function todayISO(offsetDays = 0): string {
@@ -121,7 +119,7 @@ export default function RoomDisplay({ onBack }: { onBack: () => void }) {
     cvc: '',
   });
   const [submitting, setSubmitting] = useState(false);
-  const [confirmation, setConfirmation] = useState<BookingRecord | null>(null);
+ const [confirmation, setConfirmation] = useState<any>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { rooms, loading, error } = useRooms();
@@ -207,69 +205,76 @@ const sortedRooms = useMemo(() => {
   }
 
   async function handleConfirmPayment() {
+
     if (!validatePayment() || !selectedRoom) return;
+
     setSubmitting(true);
 
-    const record: BookingRecord = {
-      id: `BK-${Date.now().toString(36).toUpperCase()}`,
-      room_name: selectedRoom.name,
-      check_in: checkIn,
-      check_out: checkOut,
-      nights,
-      adults,
-      children,
-      rooms: roomCount,
-      price_per_night: selectedRoom.pricePerNight,
-      total: grandTotal,
-      guest_first_name: guest.firstName,
-      guest_last_name: guest.lastName,
-      guest_email: guest.email,
-      guest_phone: guest.phone,
-      card_last4: payment.cardNumber.replace(/\s/g, '').slice(-4),
-      card_holder: payment.cardName,
-      status: 'confirmed',
-      created_at: new Date().toISOString(),
-    };
-
     try {
-      await saveBookingAPI({
-  booking_reference: record.id,
-  room_id: selectedRoom.id,
-  room_name: selectedRoom.name,
 
-  guest_first_name: guest.firstName,
-  guest_last_name: guest.lastName,
-  guest_email: guest.email,
-  guest_phone: guest.phone,
+        const response = await axios.post(
 
-  check_in: checkIn,
-  check_out: checkOut,
-  nights,
+            "https://hotel-booking-hvwt.onrender.com/api/payments/initialize",
 
-  adults,
-  children,
-  rooms: roomCount,
+            {
 
-  price_per_night: selectedRoom.pricePerNight,
-  subtotal: total,
-  tax,
-  total: grandTotal,
+                room_id: selectedRoom.id,
+                room_name: selectedRoom.name,
 
-  payment_method: "Card",
-  payment_status: "Paid",
-  booking_status: "Confirmed",
-});
+                guest_first_name: guest.firstName,
+                guest_last_name: guest.lastName,
+                guest_email: guest.email,
+                guest_phone: guest.phone,
 
-await saveLocalBooking(record);
-      setConfirmation(record);
-      setStep('confirmation');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch {
-      setErrors({ submit: 'Something went wrong saving your booking. Please try again.' });
+                check_in: checkIn,
+                check_out: checkOut,
+
+                nights,
+
+                adults,
+                children,
+                rooms: roomCount,
+
+                price_per_night: selectedRoom.pricePerNight,
+
+                subtotal: total,
+                tax,
+                total: grandTotal
+
+            }
+
+        );
+
+        if (response.data.success) {
+
+            window.location.href =
+                response.data.authorization_url;
+
+            return;
+
+        }
+
+        alert("Unable to initialize payment.");
+
+    } catch (err: any) {
+
+        console.error(err);
+
+        alert(
+
+            err.response?.data?.message ||
+
+            "Unable to connect to Paystack."
+
+        );
+
     } finally {
-      setSubmitting(false);
+
+        setSubmitting(false);
+
     }
-  }
+
+}
 
   function startOver() {
     setStep('search');
