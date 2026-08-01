@@ -248,45 +248,27 @@ const sortedRooms = useMemo(() => {
 
        if (response.data.success) {
 
-    paystack.newTransaction({
+    paystack.resumeTransaction({
+    accessCode: response.data.access_code,
 
-        key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
+    onSuccess: async (transaction: any) => {
+        try {
+            await axios.get(
+                `${import.meta.env.VITE_API_URL}/payments/verify/${transaction.reference}`
+            );
 
-        email: guest.email,
-
-        amount: Math.round(grandTotal * 100),
-
-        reference: response.data.reference,
-
-        onSuccess: async (transaction: any) => {
-
-            try {
-
-                await axios.get(
-                    `${import.meta.env.VITE_API_URL}/payments/verify/${transaction.reference}`
-                );
-
-                alert("Payment Successful!");
-
-                window.location.reload();
-
-            } catch (err) {
-
-                console.error(err);
-
-                alert("Payment verification failed.");
-
-            }
-
-        },
-
-        onCancel: () => {
-
-            alert("Payment Cancelled.");
-
+            alert("Payment Successful!");
+            window.location.reload();
+        } catch (err) {
+            console.error(err);
+            alert("Payment verification failed.");
         }
+    },
 
-    });
+    onCancel: () => {
+        alert("Payment Cancelled.");
+    }
+});
 
     return;
 
