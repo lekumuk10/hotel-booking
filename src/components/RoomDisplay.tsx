@@ -616,8 +616,12 @@ if (error) {
     className="w-full rounded-xl bg-amber-500 hover:bg-amber-600 text-white py-4 font-semibold disabled:opacity-60"
 >
     {submitting
-        ? "Opening Paystack..."
-        : `Pay ${grandTotal.toLocaleString()}`}
+  ? "Opening Paystack..."
+  : `Pay USD ${grandTotal.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`
+}
 </button>  
 
    </div>
