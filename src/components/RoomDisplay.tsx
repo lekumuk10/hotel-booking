@@ -88,12 +88,7 @@ interface GuestDetails {
   phone: string;
 }
 
-interface PaymentDetails {
-  cardNumber: string;
-  cardName: string;
-  expiry: string;
-  cvc: string;
-}
+
 
 export default function RoomDisplay({ onBack }: { onBack: () => void }) {
   const [step, setStep] = useState<Step>('search');
@@ -111,12 +106,7 @@ export default function RoomDisplay({ onBack }: { onBack: () => void }) {
     email: '',
     phone: '',
   });
-  const [payment, setPayment] = useState<PaymentDetails>({
-    cardNumber: '',
-    cardName: '',
-    expiry: '',
-    cvc: '',
-  });
+  
   const [submitting, setSubmitting] = useState(false);
  const [confirmation, setConfirmation] = useState<any>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -186,27 +176,10 @@ const sortedRooms = useMemo(() => {
     return Object.keys(e).length === 0;
   }
 
-  function validatePayment(): boolean {
-    const e: Record<string, string> = {};
-    const digits = payment.cardNumber.replace(/\s/g, '');
-    if (!digits) e.cardNumber = 'Card number is required';
-    else if (digits.length < 13 || digits.length > 19)
-      e.cardNumber = 'Enter a valid card number';
-    if (!payment.cardName.trim()) e.cardName = 'Name on card is required';
-    if (!payment.expiry.trim()) e.expiry = 'Expiry date is required';
-    else if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(payment.expiry))
-      e.expiry = 'Format: MM/YY';
-    if (!payment.cvc.trim()) e.cvc = 'CVC is required';
-    else if (!/^\d{3,4}$/.test(payment.cvc))
-      e.cvc = '3 or 4 digits';
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  }
-
+  
   async function handleConfirmPayment() {
 
-    alert("Button clicked");
-    console.log("Button clicked");
+    
 
     if (!selectedRoom) return;
 
@@ -311,7 +284,6 @@ const sortedRooms = useMemo(() => {
     setStep('search');
     setSelectedRoom(null);
     setGuest({ firstName: '', lastName: '', email: '', phone: '' });
-    setPayment({ cardNumber: '', cardName: '', expiry: '', cvc: '' });
     setConfirmation(null);
     setErrors({});
     window.scrollTo({ top: 0, behavior: 'smooth' });
